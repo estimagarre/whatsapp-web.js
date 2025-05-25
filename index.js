@@ -9,7 +9,7 @@ async function iniciarBot() {
   const sock = makeWASocket({
     logger: { level: 'silent' },
     printQRInTerminal: true,
-    auth: state
+    auth: state,
   });
 
   sock.ev.on('connection.update', (update) => {
@@ -18,26 +18,28 @@ async function iniciarBot() {
     if (connection === 'close') {
       const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (reason === 401) {
-        console.log('🔁 Sesión cerrada. Escanea el QR otra vez.');
-        fs.unlinkSync('./auth_info.json'); // Elimina archivo viejo
+        console.log('❌ Sesión cerrada. Escanea el QR de nuevo.');
+        fs.unlinkSync('./auth_info.json');
         iniciarBot();
       } else {
-        console.log('Reconectando...', reason);
+        console.log('♻️ Reconectando...', reason);
         iniciarBot();
       }
-    } else if (connection === 'open') {
-      console.log('✅ Bot conectado exitosamente a WhatsApp.');
+    }
+
+    if (connection === 'open') {
+      console.log('✅ Bot conectado correctamente a WhatsApp.');
     }
   });
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
-    const mensaje = messages[0];
-    const texto = mensaje.message?.conversation || mensaje.message?.extendedTextMessage?.text || '';
-    const remitente = mensaje.key.remoteJid;
+    const msg = messages[0];
+    const texto = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+    const remitente = msg.key.remoteJid;
 
     if (texto.toLowerCase().includes('hola')) {
-      await sock.sendMessage(remitente, { text: '¡Hola! Soy tu bot 🤖. ¿En qué puedo ayudarte?' });
+      await sock.sendMessage(remitente, { text: 'Hola, soy tu bot 🤖. ¿En qué puedo ayudarte?' });
     }
   });
 
