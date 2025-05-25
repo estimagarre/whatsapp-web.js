@@ -1,33 +1,35 @@
 // index.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Configuration, OpenAIApi } = require('openai');
+require('dotenv').config();
 
-// 1. Modo estricto para evitar errores comunes
-'use strict';
+const app = express();
+app.use(bodyParser.json());
 
-// 2. Importamos el cliente de OpenAI
-const { OpenAI } = require("openai");
-const dotenv = require("dotenv");
-dotenv.config(); // Carga las variables del archivo .env si existe
-
-// 3. Leer la clave desde la variable de entorno
-const openai = new OpenAI({
+const openai = new OpenAIApi(new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
+}));
+
+app.post('/preguntar', async (req, res) => {
+  try {
+    const pregunta = req.body.mensaje || 'Hola, ¿quién eres?';
+
+    const respuesta = await openai.createChatCompletion({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: pregunta }],
+    });
+
+    const contenido = respuesta.data.choices[0].message.content;
+    res.json({ respuesta: contenido });
+
+  } catch (error) {
+    console.error('Error al contactar a OpenAI:', error.message);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
-// 4. Crear una función para consultar a la IA
-async function responderConIA(pregunta) {
-  try {
-    const respuesta = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: pregunta }],
-    });
-    console.log("Respuesta de la IA:", respuesta.choices[0].message.content);
-    return respuesta.choices[0].message.content;
-  } catch (error) {
-    console.error("Error al llamar a OpenAI:", error);
-    return "Ocurrió un error al intentar responder con IA.";
-  }
-}
-
-// 5. Prueba directa
-responderConIA("Hola, ¿qué puedes hacer por mí?");
-
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor funcionando en el puerto ${PORT}`);
+});
