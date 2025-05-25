@@ -5,11 +5,11 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-const openai = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.CLAVE_API_DE_OPENAI,
-  })
-);
+const configuration = new Configuration({
+  apiKey: process.env.CLAVE_API_DE_OPENAI,
+});
+
+const openai = new OpenAIApi(configuration);
 
 app.post('/preguntar', async (req, res) => {
   try {
@@ -25,11 +25,11 @@ app.post('/preguntar', async (req, res) => {
 
   } catch (error) {
     console.error('Error al contactar a OpenAI:', error.message);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en el puerto ${PORT}`);
+  console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
