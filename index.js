@@ -1,26 +1,24 @@
 const express = require('express');
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.CLAVE_API_DE_OPENAI,
 });
-
-const openai = new OpenAIApi(configuration);
 
 app.post('/preguntar', async (req, res) => {
   try {
     const pregunta = req.body.mensaje || 'Hola, ¿quién eres?';
 
-    const respuesta = await openai.createChatCompletion({
+    const respuesta = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: pregunta }],
     });
 
-    const contenido = respuesta.data.choices[0].message.content;
+    const contenido = respuesta.choices[0].message.content;
     res.json({ respuesta: contenido });
 
   } catch (error) {
