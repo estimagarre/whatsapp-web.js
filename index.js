@@ -1,36 +1,28 @@
-const { default: makeWASocket, useSingleFileAuthState, makeInMemoryStore } = require('@whiskeysockets/baileys')
-const { Boom } = require('@hapi/boom')
+const makeWASocket = require('@whiskeysockets/baileys').default
+const { makeInMemoryStore } = require('@whiskeysockets/baileys')
+const { useMultiFileAuthState } = require('@whiskeysockets/baileys')
 const P = require('pino')
-const fs = require('fs')
-const path = require('path')
-
-const { state, saveState } = useSingleFileAuthState('./auth_info.json')
-const store = makeInMemoryStore({ logger: P().child({ level: 'debug', stream: 'store' }) })
 
 async function iniciarBot() {
+  const { state, saveCreds } = await useMultiFileAuthState('./auth')
   const sock = makeWASocket({
     auth: state,
     printQRInTerminal: true,
-    logger: P({ level: 'silent' })
+    logger: P({ level: 'silent' }),
   })
 
-  store.bind(sock.ev)
-
-  sock.ev.on('creds.update', saveState)
+  sock.ev.on('creds.update', saveCreds)
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return
-    const msg = messages[0]
+    const m = messages[0]
+    if (!m.message) return
 
-    if (!msg.message) return
+    const texto = m.message.conversation || m.message.extendedTextMessage?.text
 
-    const texto = msg.message.conversation || msg.message.extendedTextMessage?.text
-
-    if (texto === 'hola') {
-      await sock.sendMessage(msg.key.remoteJid, { text: 'Hola, soy tu bot conectado con QR 😎' })
+    if (texto?.toLowerCase() === 'hola') {
+      await sock.sendMessage(m.key.remoteJid, { text: '¡Hola! Soy tu bot Baileys QR conectado 24/7 🚀' })
     }
   })
 }
 
 iniciarBot()
-
