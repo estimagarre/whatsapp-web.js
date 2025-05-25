@@ -1,12 +1,12 @@
 {
-  "nombre": "bot-whatsapp-baileys",
-  "versión": "1.0.0",
-  "descripción": "Bot de WhatsApp usando Baileys y QR en Railway",
-  "principal": "index.js",
-  "guiones": {
-    "comenzar": "nodo index.js"
+  "name": "bot-whatsapp-baileys",
+  "version": "1.0.0",
+  "description": "Bot de WhatsApp usando Baileys y QR en Railway",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
   },
-  "dependencias": {
+  "dependencies": {
     "@whiskeysockets/baileys": "^6.5.0",
     "@hapi/boom": "^10.0.1",
     "dotenv": "^16.0.3",
