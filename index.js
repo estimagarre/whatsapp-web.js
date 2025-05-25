@@ -1,33 +1,33 @@
+// index.js
+
+// 1. Modo estricto para evitar errores comunes
 'use strict';
 
-const Constants = require('./src/util/Constants');
+// 2. Importamos el cliente de OpenAI
+const { OpenAI } = require("openai");
+const dotenv = require("dotenv");
+dotenv.config(); // Carga las variables del archivo .env si existe
 
-module.exports = {
-    Client: require('./src/Client'),
-    
-    version: require('./package.json').version,
+// 3. Leer la clave desde la variable de entorno
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-    // Structures
-    Chat: require('./src/structures/Chat'),
-    PrivateChat: require('./src/structures/PrivateChat'),
-    GroupChat: require('./src/structures/GroupChat'),
-    Message: require('./src/structures/Message'),
-    MessageMedia: require('./src/structures/MessageMedia'),
-    Contact: require('./src/structures/Contact'),
-    PrivateContact: require('./src/structures/PrivateContact'),
-    BusinessContact: require('./src/structures/BusinessContact'),
-    ClientInfo: require('./src/structures/ClientInfo'),
-    Location: require('./src/structures/Location'),
-    Poll: require('./src/structures/Poll'),
-    ProductMetadata: require('./src/structures/ProductMetadata'),
-    List: require('./src/structures/List'),
-    Buttons: require('./src/structures/Buttons'),
-    Broadcast: require('./src/structures/Broadcast'),
-    
-    // Auth Strategies
-    NoAuth: require('./src/authStrategies/NoAuth'),
-    LocalAuth: require('./src/authStrategies/LocalAuth'),
-    RemoteAuth: require('./src/authStrategies/RemoteAuth'),
-    
-    ...Constants
-};
+// 4. Crear una función para consultar a la IA
+async function responderConIA(pregunta) {
+  try {
+    const respuesta = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: pregunta }],
+    });
+    console.log("Respuesta de la IA:", respuesta.choices[0].message.content);
+    return respuesta.choices[0].message.content;
+  } catch (error) {
+    console.error("Error al llamar a OpenAI:", error);
+    return "Ocurrió un error al intentar responder con IA.";
+  }
+}
+
+// 5. Prueba directa
+responderConIA("Hola, ¿qué puedes hacer por mí?");
+
