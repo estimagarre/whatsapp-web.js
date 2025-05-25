@@ -1,5 +1,4 @@
-const makeWASocket = require('@whiskeysockets/baileys').default;
-const { useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
 const Boom = require('@hapi/boom');
 const fs = require('fs');
 require('dotenv').config();
@@ -15,18 +14,19 @@ async function iniciarBot() {
 
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect } = update;
+
         if (connection === 'close') {
             const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
             if (reason === 401) {
-                console.log('🛑 Sesión cerrada. Escanea el QR otra vez.');
+                console.log('❌ Sesión cerrada. Escanea el QR de nuevo.');
                 fs.unlinkSync('./auth_info.json');
                 iniciarBot();
             } else {
-                console.log('🔁 Reintentando conexión...', reason);
+                console.log('🔁 Reconectando...', reason);
                 iniciarBot();
             }
         } else if (connection === 'open') {
-            console.log('✅ Bot conectado a WhatsApp.');
+            console.log('✅ Conectado a WhatsApp correctamente');
         }
     });
 
