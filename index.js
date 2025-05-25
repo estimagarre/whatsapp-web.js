@@ -1,10 +1,11 @@
+// index.js
+
 const express = require('express');
-const bodyParser = require('body-parser');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
 
 const app = express();
-app.use(bodyParser.json());
+app.use(express.json());
 
 const configuration = new Configuration({
   apiKey: process.env.CLAVE_API_DE_OPENAI,
@@ -23,13 +24,13 @@ app.post('/preguntar', async (req, res) => {
 
     const contenido = respuesta.data.choices[0].message.content;
     res.json({ respuesta: contenido });
-
   } catch (error) {
     console.error('Error al contactar a OpenAI:', error.message);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
 
-app.listen(3000, () => {
-  console.log('Servidor activo en el puerto 3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor funcionando en el puerto ${PORT}`);
 });
