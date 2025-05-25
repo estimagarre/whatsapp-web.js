@@ -6,9 +6,12 @@
   "scripts": {
     "start": "node index.js"
   },
+  "author": "estimagarre",
+  "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.5.0",
-    "pino": "^8.0.0",
-    "dotenv": "^16.0.3"
+    "@hapi/boom": "^10.0.1",
+    "dotenv": "^16.0.3",
+    "pino": "^8.0.0"
   }
 }
