@@ -1,10 +1,9 @@
-const makeWASocket = require('@whiskeysockets/baileys').default
-const { makeInMemoryStore } = require('@whiskeysockets/baileys')
-const { useMultiFileAuthState } = require('@whiskeysockets/baileys')
+const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys')
 const P = require('pino')
 
 async function iniciarBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('./auth')
+  const { state, saveCreds } = await useMultiFileAuthState('./auth') // Asegúrate de tener la carpeta 'auth'
+
   const sock = makeWASocket({
     auth: state,
     printQRInTerminal: true,
@@ -13,14 +12,14 @@ async function iniciarBot() {
 
   sock.ev.on('creds.update', saveCreds)
 
-  sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    const m = messages[0]
-    if (!m.message) return
+  sock.ev.on('messages.upsert', async ({ messages }) => {
+    const msg = messages[0]
+    if (!msg.message) return
 
-    const texto = m.message.conversation || m.message.extendedTextMessage?.text
+    const texto = msg.message.conversation || msg.message.extendedTextMessage?.text
 
     if (texto?.toLowerCase() === 'hola') {
-      await sock.sendMessage(m.key.remoteJid, { text: '¡Hola! Soy tu bot Baileys QR conectado 24/7 🚀' })
+      await sock.sendMessage(msg.key.remoteJid, { text: '¡Hola! Soy tu bot WhatsApp QR 24/7 🚀' })
     }
   })
 }
