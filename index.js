@@ -1,11 +1,11 @@
-const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
 const Boom = require('@hapi/boom');
 const fs = require('fs');
 require('dotenv').config();
 
-const { state, saveState } = useSingleFileAuthState('./auth_info.json');
-
 async function iniciarBot() {
+  const { state, saveCreds } = await useMultiFileAuthState('./auth_info_baileys');
+
   const sock = makeWASocket({
     logger: { level: 'silent' },
     printQRInTerminal: true,
@@ -19,7 +19,7 @@ async function iniciarBot() {
       const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
       if (reason === 401) {
         console.log('❌ Sesión cerrada. Escanea el QR de nuevo.');
-        fs.unlinkSync('./auth_info.json');
+        fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
         iniciarBot();
       } else {
         console.log('♻️ Reconectando...', reason);
@@ -43,7 +43,8 @@ async function iniciarBot() {
     }
   });
 
-  sock.ev.on('creds.update', saveState);
+  sock.ev.on('creds.update', saveCreds);
 }
 
 iniciarBot();
+
