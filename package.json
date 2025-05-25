@@ -1,16 +1,15 @@
 {
-  "name": "whatsapp-web-bot",
+  "name": "bot-whatsapp-baileys",
   "version": "1.0.0",
-  "description": "Bot web para responder con OpenAI",
+  "description": "Bot de WhatsApp usando Baileys y QR en Railway",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "author": "estimagarre",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@whiskeysockets/baileys": "^6.5.0",
+    "@hapi/boom": "^10.0.1",
     "dotenv": "^16.0.3",
-    "openai": "^4.0.0"
+    "pino": "^8.0.0"
   }
 }
