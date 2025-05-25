@@ -8,7 +8,7 @@ async function iniciarBot() {
   const { state, saveCreds } = await useMultiFileAuthState('./auth_info_baileys');
 
   const sock = makeWASocket({
-    logger: Pino({ level: 'silent' }), // Usa Pino correctamente
+    logger: Pino({ level: 'silent' }),  // <== CORRECTO AQUÍ
     printQRInTerminal: true,
     auth: state,
   });
