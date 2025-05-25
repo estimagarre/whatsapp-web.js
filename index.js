@@ -1,54 +1,54 @@
-// index.js para WhatsApp Web usando Baileys y QR en Railway (versión estable 24/7)
-
-const { makeWASocket, useSingleFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+// index.js
+const { default: makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
+const P = require('pino');
+const { default: makeInMemoryStore } = require('@whiskeysockets/baileys/lib/store/in-memory');
 const fs = require('fs');
-const pino = require('pino');
+const { join } = require('path');
 require('dotenv').config();
 
-// Autenticación guardada en archivo
 const { state, saveState } = useSingleFileAuthState('./auth_info.json');
 
-async function iniciarBot() {
+const store = makeInMemoryStore({ logger: P().child({ level: 'silent', stream: 'store' }) });
+store.readFromFile('./baileys_store.json');
+setInterval(() => {
+  store.writeToFile('./baileys_store.json');
+}, 10_000);
+
+async function connectToWhatsApp() {
   const sock = makeWASocket({
-    logger: pino({ level: 'silent' }),
-    printQRInTerminal: true, // Mostrar QR directamente en consola
+    logger: P({ level: 'silent' }),
+    printQRInTerminal: true,
     auth: state,
   });
 
-  // Guardar sesión al conectarse
+  store.bind(sock.ev);
+
   sock.ev.on('creds.update', saveState);
 
-  // Manejar reconexiones
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect } = update;
     if (connection === 'close') {
-      const motivo = new Boom(lastDisconnect?.error)?.output.statusCode;
-      if (motivo === DisconnectReason.loggedOut) {
-        console.log('Sesíon cerrada. Vuelve a escanear el código QR.');
-        iniciarBot();
-      } else {
-        console.log('Reconectando...');
-        iniciarBot();
-      }
+      const shouldReconnect = (lastDisconnect.error = Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log('Connection closed. Reconnecting:', shouldReconnect);
+      if (shouldReconnect) connectToWhatsApp();
     } else if (connection === 'open') {
-      console.log('✅ Conectado a WhatsApp Web. Bot funcionando 24/7.');
+      console.log('✅ ¡Conectado a WhatsApp!');
     }
   });
 
-  // Manejo de mensajes
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    const m = messages[0];
-    if (!m.message || m.key.fromMe) return;
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    const msg = messages[0];
+    if (!msg.message) return;
+    if (msg.key.fromMe) return;
 
-    const mensajeTexto = m.message?.conversation || m.message?.extendedTextMessage?.text;
+    const sender = msg.key.remoteJid;
+    const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
 
-    if (mensajeTexto?.toLowerCase().includes('hola')) {
-      await sock.sendMessage(m.key.remoteJid, {
-        text: 'Hola 👋 soy el bot Esti Natural Cura. ¡Estoy activo las 24 horas!'
-      });
+    if (text?.toLowerCase() === 'hola') {
+      await sock.sendMessage(sender, { text: '¡Hola! Soy un bot conectado por QR usando Baileys 🚀' });
     }
   });
 }
 
-iniciarBot();
+connectToWhatsApp();
