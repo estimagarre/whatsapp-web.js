@@ -1,4 +1,5 @@
 const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const Pino = require('pino');
 const Boom = require('@hapi/boom');
 const fs = require('fs');
 require('dotenv').config();
@@ -7,7 +8,7 @@ async function iniciarBot() {
   const { state, saveCreds } = await useMultiFileAuthState('./auth_info_baileys');
 
   const sock = makeWASocket({
-    logger: { level: 'silent' },
+    logger: Pino({ level: 'silent' }), // Usa Pino correctamente
     printQRInTerminal: true,
     auth: state,
   });
@@ -47,4 +48,3 @@ async function iniciarBot() {
 }
 
 iniciarBot();
-
