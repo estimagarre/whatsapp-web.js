@@ -1,19 +1,18 @@
-global.crypto = require('crypto');
-
 require('dotenv').config();
 const { obtenerRespuestaIA } = require('./openai');
 const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
+const path = require('path'); // 👈 Agregado para asegurar ruta absoluta
 
 const historialConversaciones = {}; // Historial por número
 
 async function iniciarBot() {
   console.log("📦 Verificando archivos de sesión...");
 
-  const sessionPath = './auth_info_baileys';
-  const credsFile = './auth_info_baileys/creds.json';
+  const sessionPath = path.join(__dirname, 'auth_info_baileys');
+  const credsFile = path.join(sessionPath, 'creds.json');
 
   if (fs.existsSync(sessionPath) && fs.existsSync(credsFile)) {
     console.log("📂 auth_info_baileys existe: true");
@@ -24,7 +23,7 @@ async function iniciarBot() {
 
   console.log("🤖 Bot iniciado");
 
-  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+  const { state, saveCreds } = await useMultiFileAuthState(sessionPath); // 👈 Ruta corregida
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
