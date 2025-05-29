@@ -1,4 +1,6 @@
 require('dotenv').config();
+global.crypto = require('crypto'); // ✅ Requerido para entorno Railway
+
 const { obtenerRespuestaIA } = require('./openai');
 const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
