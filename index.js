@@ -1,51 +1,98 @@
-const { default: makeWASocket, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const Boom = require('@hapi/boom');
-const Pino = require('pino');
-const fs = require('fs');
 require('dotenv').config();
+const { obtenerRespuestaIA } = require('./openai');
+const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { Boom } = require('@hapi/boom');
+const qrcode = require('qrcode-terminal');
+const fs = require('fs');
+
+const historialConversaciones = {}; // Historial por número
 
 async function iniciarBot() {
-  const { state, saveCreds } = await useMultiFileAuthState('./auth_info_baileys');
+  console.log("📦 Verificando archivos de sesión...");
+
+  const sessionPath = './auth_info_baileys';
+  const credsFile = './auth_info_baileys/creds.json';
+
+  if (fs.existsSync(sessionPath) && fs.existsSync(credsFile)) {
+    console.log("📂 auth_info_baileys existe: true");
+    console.log("📄 creds.json existe: true");
+  } else {
+    console.log("⚠️ Archivos de sesión no encontrados. Se generará uno nuevo al escanear el QR.");
+  }
+
+  console.log("🤖 Bot iniciado");
+
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
+  const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
-    logger: Pino({ level: 'silent' }), // Usa correctamente Pino
-    printQRInTerminal: true,
+    version,
     auth: state,
+    printQRInTerminal: true, // 👈 Activa QR temporalmente para Railway
   });
 
   sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect } = update;
+    console.log("🔄 Estado conexión:", update);
+
+    const { connection, lastDisconnect, qr } = update;
+
+    if (qr) {
+      console.log("🔐 Escanea este código QR para conectar:");
+      qrcode.generate(qr, { small: true });
+    }
 
     if (connection === 'close') {
-      const reason = Boom.boomify(lastDisconnect?.error)?.output?.statusCode;
-
-      if (reason === 401) {
-        console.log('❌ Sesión cerrada. Escanea el QR de nuevo.');
-        fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
-        iniciarBot();
-      } else {
-        console.log('♻️ Reconectando...', reason);
-        iniciarBot();
+      const motivo = new Boom(lastDisconnect?.error)?.output?.statusCode;
+      console.log("⚠️ Conexión cerrada. Código:", motivo);
+      if (motivo !== 401) {
+        iniciarBot(); // Reintenta conexión
       }
     }
 
     if (connection === 'open') {
-      console.log('✅ Bot conectado correctamente a WhatsApp.');
+      console.log("✅ Esti Franco conectado a WhatsApp.");
     }
   });
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     if (type !== 'notify') return;
-    const msg = messages[0];
-    const texto = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-    const remitente = msg.key.remoteJid;
+    const mensaje = messages[0];
+    if (!mensaje.message || mensaje.key.fromMe) return;
 
-    if (texto.toLowerCase().includes('hola')) {
-      await sock.sendMessage(remitente, { text: 'Hola, soy tu bot 🤖. ¿En qué puedo ayudarte?' });
+    const numero = mensaje.key.remoteJid;
+    const texto = mensaje.message.conversation || mensaje.message.extendedTextMessage?.text;
+    if (!texto) return;
+
+    // Crear historial por número si no existe
+    if (!historialConversaciones[numero]) {
+      historialConversaciones[numero] = [];
     }
+
+    // Agregar el mensaje del usuario al historial
+    historialConversaciones[numero].push({ role: "user", content: texto });
+
+    // Obtener respuesta de la IA con historial incluido
+    const respuesta = await obtenerRespuestaIA(historialConversaciones[numero]);
+
+    // Agregar respuesta de la IA al historial
+    historialConversaciones[numero].push({ role: "assistant", content: respuesta });
+
+    // Enviar respuesta
+    await sock.sendMessage(numero, { text: respuesta });
   });
 
   sock.ev.on('creds.update', saveCreds);
 }
 
-iniciarBot();
+// 🛠️ Captura errores reales aquí
+iniciarBot().catch((error) => {
+  console.error("❌ Error real al iniciar el bot:", error);
+});
+
+// Mantener Railway activo con un servidor HTTP
+const http = require('http');
+http.createServer((req, res) => {
+  res.write("Esti Franco está en línea ✅");
+  res.end();
+}).listen(process.env.PORT || 3050);
+
