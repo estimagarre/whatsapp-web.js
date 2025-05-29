@@ -1,3 +1,5 @@
+global.crypto = require('crypto');
+
 require('dotenv').config();
 const { obtenerRespuestaIA } = require('./openai');
 const { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
